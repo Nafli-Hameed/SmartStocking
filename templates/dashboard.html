@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SmartStock AI Dashboard</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    <h1>SmartStock AI Dashboard</h1>
+
+    <div id="inventory-chart"></div>
+
+    <script>
+        // Inventory Data (passed from Flask as JSON)
+        const inventoryData = {{ inventory | tojson }};
+
+        // Prepare data for visualization
+        const trace = {
+            x: inventoryData.map(item => item.item),
+            y: inventoryData.map(item => item.current_stock),
+            type: 'bar',
+            name: 'Current Stock'
+        };
+
+        const layout = {
+            title: 'Inventory Levels',
+            xaxis: { title: 'Items' },
+            yaxis: { title: 'Stock Count' }
+        };
+
+        // Render chart using Plotly.js
+        Plotly.newPlot('inventory-chart', [trace], layout);
+        
+        // Fetch predictions example (optional)
+        fetch('/predict')
+            .then(response => response.json())
+            .then(data => console.log('Predicted Stock:', data.predicted_stock));
+        
+        // Fetch NLP analysis example (optional)
+        fetch('/analyze')
+            .then(response => response.json())
+            .then(data => console.log('NLP Analysis:', data));
+    </script>
+</body>
+</html>
