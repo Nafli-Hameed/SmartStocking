@@ -1,20 +1,28 @@
-# Import necessary libraries
+import nltk
+
+# Download necessary NLTK resources
+nltk.download('punkt')
+nltk.download('averaged_perceptron_tagger')
+nltk.download('wordnet')
+nltk.download('stopwords')
+nltk.download('vader_lexicon')
+
 from flask import Flask, render_template, jsonify
 import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
-from textblob import TextBlob
-import spacy
+import nltk
+from nltk import word_tokenize, pos_tag, ne_chunk
+from nltk.sentiment import SentimentIntensityAnalyzer
+
+# Download necessary NLTK resources
+nltk.download('punkt')
+nltk.download('averaged_perceptron_tagger')
+nltk.download('wordnet')
+nltk.download('stopwords')
+nltk.download('vader_lexicon')
 
 # Initialize Flask app
 app = Flask(__name__)
-
-# Load NLP model (spaCy)
-try:
-    nlp = spacy.load("en_core_web_sm")
-except OSError:
-    import subprocess
-    subprocess.run(["python", "-m", "spacy", "download", "en_core_web_sm"])
-    nlp = spacy.load("en_core_web_sm")
 
 # Sample inventory data (replace with actual data later)
 inventory_data = [
@@ -45,16 +53,30 @@ def train_ml_model():
 
 model = train_ml_model()
 
-# NLP Analysis Function
+# NLP Analysis Function using NLTK
 def analyze_market_text(text):
-    doc = nlp(text)
-    entities = [(ent.text, ent.label_) for ent in doc.ents]
-    sentiment = TextBlob(text).sentiment
+    # Tokenization and POS tagging
+    tokens = word_tokenize(text)
+    pos_tags = pos_tag(tokens)
+
+    # Named Entity Recognition (NER)
+    ner_tree = ne_chunk(pos_tags)
+    entities = []
+    for chunk in ner_tree:
+        if hasattr(chunk, 'label'):
+            entities.append((chunk.label(), ' '.join(c[0] for c in chunk)))
+
+    # Sentiment Analysis using VADER
+    sia = SentimentIntensityAnalyzer()
+    sentiment = sia.polarity_scores(text)
+
     return {
         'entities': entities,
         'sentiment': {
-            'polarity': sentiment.polarity,
-            'subjectivity': sentiment.subjectivity
+            'positive': sentiment['pos'],
+            'neutral': sentiment['neu'],
+            'negative': sentiment['neg'],
+            'compound': sentiment['compound']
         }
     }
 
@@ -79,4 +101,5 @@ def analyze():
     analysis_results = analyze_market_text(market_report)
     return jsonify(analysis_results)
 
-if __name__ ==
+if __name__ == '__main__':
+    app.run(debug=True)
