@@ -1,5 +1,8 @@
 flask
+flask-sqlalchemy
+requests
+beautifulsoup4
 pandas
 scikit-learn
-nltk
-textblob
+plotly
+python-dotenv

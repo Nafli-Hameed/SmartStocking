@@ -1,17 +1,27 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>SmartStock AI Dashboard</title>
-</head>
-<body>
-    <h1>SmartStock AI Dashboard</h1>
+{% extends "base.html" %}
 
-    <h2>Inventory Overview</h2>
-    <ul>
-        {% for item in inventory %}
-            <li>{{ item.item }}: Current Stock - {{ item.current_stock }}, Threshold - {{ item.threshold }}</li>
+{% block content %}
+    <h1>Inventory Dashboard</h1>
+    <button onclick="location.href='/update-stock'" type="button">Update Stock Data</button>
+    
+    <table>
+        <tr>
+            <th>Item</th>
+            <th>Category</th>
+            <th>Current Stock</th>
+            <th>Threshold</th>
+            <th>Action</th>
+        </tr>
+        {% for item in items %}
+        <tr class="{{ 'alert' if item.needs_reorder() }}">
+            <td>{{ item.name }}</td>
+            <td>{{ item.category }}</td>
+            <td>{{ item.current_stock }}</td>
+            <td>{{ item.reorder_threshold }}</td>
+            <td>
+                <a href="{{ url_for('stock_forecast', stock_id=item.id) }}">Forecast</a>
+            </td>
+        </tr>
         {% endfor %}
-    </ul>
-
-</body>
-</html>
+    </table>
+{% endblock %}
