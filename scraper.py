@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 from models import db, StockItem
 
 class WebScraper:
-    def __init__(self, base_url="https://example-inventory-source.com"):
+    def __init__(self, base_url="https://books.toscrape.com/"):
         self.base_url = base_url
         self.raw_data = None  # Initialize raw_data here
         
