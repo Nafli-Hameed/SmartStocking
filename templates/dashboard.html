@@ -2,7 +2,9 @@
 
 {% block content %}
     <h1>Inventory Dashboard</h1>
-    <button onclick="location.href='/update-stock'" type="button">Update Stock Data</button>
+    <form action="{{ url_for('update_stock') }}" method="post">
+        <button type="submit">Update Stock Data</button>
+    </form>
     
     <table>
         <tr>
