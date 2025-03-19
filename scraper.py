@@ -3,13 +3,12 @@ from bs4 import BeautifulSoup
 from models import db, StockItem
 from flask import Flask
 
-# Initialize Flask app
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///inventory.db'  # Change to your actual database
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///inventory.db'  # Change as needed
 db.init_app(app)
 
 class WebScraper:
-    def __init__(self, base_url="https://books.toscrape.com/"):
+    def __init__(self, base_url="https://books.toscrape.com/catalogue/"):
         self.base_url = base_url
 
     def fetch_data(self, url):
@@ -41,30 +40,39 @@ class WebScraper:
         return items
 
     def get_all_pages(self):
-        """Iterate through valid pages of the site."""
+        """Iterate through valid pages and stop when no more pages exist."""
         all_items = []
         page_number = 1  
 
         while True:
-            url = f"{self.base_url}catalogue/page-{page_number}.html" if page_number > 1 else self.base_url
+            url = f"{self.base_url}page-{page_number}.html" if page_number > 1 else self.base_url
             print(f"Scraping page {page_number}...")
-            
+
             html = self.fetch_data(url)
             if not html:  
                 break  
 
             parsed_items = self.parse_data(html)
             if not parsed_items:  
+                print(f"No more products found on page {page_number}. Stopping...")
                 break  
 
             all_items.extend(parsed_items)
+
+            # Check if "next" button exists
+            soup = BeautifulSoup(html, 'html.parser')
+            next_button = soup.find('li', class_='next')
+            if not next_button:  
+                print("No more pages. Stopping...")
+                break  
+
             page_number += 1  
 
         return all_items
 
     def update_database(self):
         """Update the database with scraped inventory data."""
-        with app.app_context():  # Ensure Flask app context is active
+        with app.app_context():
             items = self.get_all_pages()
             if not items:
                 print("No data scraped, skipping update.")
