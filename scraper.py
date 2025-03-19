@@ -8,7 +8,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///inventory.db'  # Change as ne
 db.init_app(app)
 
 class WebScraper:
-    def __init__(self, base_url="https://books.toscrape.com/catalogue/"):
+    def __init__(self, base_url="https://books.toscrape.com"):
         self.base_url = base_url
 
     def fetch_data(self, url):
