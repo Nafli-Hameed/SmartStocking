@@ -1,18 +1,15 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from config import Config
 from models import db, StockItem, Forecast
 from scraper import WebScraper
 from ml_model import ForecastModel
 import plotly.express as px
 from datetime import datetime, timedelta
-from flask_migrate import Migrate
 import pandas as pd
 
 app = Flask(__name__)
 app.config.from_object(Config)
 db.init_app(app)
-
-migrate = Migrate(app, db) # Initialize Flask-Migrate
 
 # Initialize components
 scraper = WebScraper()
@@ -25,9 +22,17 @@ def dashboard():
 
 @app.route('/update-stock', methods=['POST'])
 def update_stock():
-    item_count = scraper.update_database()
-    flash(f"Updated {item_count} items", "success")
-    return redirect(url_for('dashboard'))
+    data = request.get_json()
+    url = data.get('url')
+    print(f"Received URL: {url}")  # Print the received URL
+    if url:
+        item_count = scraper.update_database(url)
+        flash(f"Updated {item_count} items from {url}", "success")
+    else:
+        flash("URL is required.", "error")
+    return jsonify({'success': True})
+
+#    return redirect(url_for('dashboard'))
 
 @app.route('/forecast/<int:stock_id>')
 def stock_forecast(stock_id):
@@ -45,6 +50,18 @@ def stock_forecast(stock_id):
         flash("Could not generate forecast.", "error")
         
     return redirect(url_for('forecast_view'))
+
+@app.route('/clear-stock', methods=['GET', 'POST'])
+def clear_stock():
+    try:
+        StockItem.query.delete()
+        db.session.commit()
+        flash("Stock cleared successfully.", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Failed to clear stock: {e}", "error")
+    return redirect(url_for('dashboard'))
+
 
 @app.route('/forecasts')
 def forecast_view():

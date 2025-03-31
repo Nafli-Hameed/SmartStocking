@@ -10,7 +10,7 @@ class StockItem(db.Model):
     category = db.Column(db.String(50))
     current_stock = db.Column(db.Integer, default=0)
     reorder_threshold = db.Column(db.Integer)
-    price = db.Column(db.Float)  # Make sure this line is present and correct
+    price = db.Column(db.Float)
     forecasts = db.relationship('Forecast', backref='stock_item', lazy=True)
 
     def needs_reorder(self):

@@ -4,12 +4,13 @@ import re
 from models import db, StockItem
 
 class WebScraper:
-    def __init__(self, base_url="https://books.toscrape.com"):
-        self.base_url = base_url
+    def __init__(self):
+        self.base_url = None
         self.raw_data = None
 
-    def fetch_data(self):
+    def fetch_data(self, url):
         try:
+            self.base_url = url
             response = requests.get(self.base_url)
             response.raise_for_status()
             self.raw_data = response.text
@@ -24,21 +25,19 @@ class WebScraper:
 
         soup = BeautifulSoup(self.raw_data, 'html.parser')
         items = []
-
+        
         for article in soup.find_all('article', class_='product_pod'):
             try:
                 # Extract the book name
                 name = article.h3.a['title']
 
-                # Extract the price, removing the £ sign
+                # Extract the price, removing the £ sign and any encoding issues
                 price_text = article.find('p', class_='price_color').text.strip()
-                try:
-                    price = float(price_text.replace('£', ''))
-                except ValueError:
-                    print(f"Could not convert price '{price_text}' to float. Setting to 0.0")
-                    price = 0.0  # Default price if conversion fails
+                # Remove any non-numeric characters except for the decimal point
+                price_text = price_text.replace('£', '').replace('Â', '').replace(',', '')  # Remove comma if present
+                price = float(price_text)
 
-                # Extract the availability. If it's in stock, assign a stock level of 20
+                # Extract the availability. If it's in stock, assign a random stock level
                 availability = article.find('p', class_='instock availability').text.strip()
                 if "In stock" in availability:
                     current_stock = 20  # Fixed quantity of books
@@ -57,8 +56,8 @@ class WebScraper:
 
         return items
 
-    def update_database(self):
-        if not self.fetch_data():
+    def update_database(self, url):
+        if not self.fetch_data(url):
             print("Failed to fetch data")
             return 0
 
@@ -69,6 +68,8 @@ class WebScraper:
 
         count = 0
         for item_data in items:
+            print(f"Processing item: {item_data['name']}")
+            
             existing_item = StockItem.query.filter_by(name=item_data['name']).first()
 
             if existing_item:
