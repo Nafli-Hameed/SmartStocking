@@ -1,100 +1,92 @@
 import requests
 from bs4 import BeautifulSoup
+import re
 from models import db, StockItem
-from flask import Flask
-
-app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///inventory.db'  # Change as needed
-db.init_app(app)
 
 class WebScraper:
     def __init__(self, base_url="https://books.toscrape.com"):
         self.base_url = base_url
+        self.raw_data = None
 
-    def fetch_data(self, url):
-        """Fetch HTML content from the given URL."""
+    def fetch_data(self):
         try:
-            response = requests.get(url, timeout=10)
+            response = requests.get(self.base_url)
             response.raise_for_status()
-            return response.text
+            self.raw_data = response.text
+            return True
         except requests.exceptions.RequestException as e:
-            print(f"Error fetching {url}: {str(e)}")
-            return None
+            print(f"Request failed: {e}")
+            return False
 
-    def parse_data(self, html):
-        """Extract book details from a page."""
-        soup = BeautifulSoup(html, 'html.parser')
+    def parse_data(self):
+        if not self.raw_data:
+            return []
+
+        soup = BeautifulSoup(self.raw_data, 'html.parser')
         items = []
 
-        for item in soup.find_all('article', class_='product_pod'):
-            name = item.find('h3').find('a')['title']
-            stock_text = item.find('p', class_='instock availability').text.strip()
-            stock = 1 if "In stock" in stock_text else 0  
+        for article in soup.find_all('article', class_='product_pod'):
+            try:
+                # Extract the book name
+                name = article.h3.a['title']
 
-            items.append({
-                'name': name,
-                'category': "Books",
-                'current_stock': stock,
-                'reorder_threshold': 5  
-            })
+                # Extract the price, removing the £ sign
+                price_text = article.find('p', class_='price_color').text.strip()
+                try:
+                    price = float(price_text.replace('£', ''))
+                except ValueError:
+                    print(f"Could not convert price '{price_text}' to float. Setting to 0.0")
+                    price = 0.0  # Default price if conversion fails
+
+                # Extract the availability. If it's in stock, assign a stock level of 20
+                availability = article.find('p', class_='instock availability').text.strip()
+                if "In stock" in availability:
+                    current_stock = 20  # Fixed quantity of books
+                else:
+                    current_stock = 0
+
+                items.append({
+                    'name': name,
+                    'category': "Books",  # All items are books
+                    'current_stock': current_stock,
+                    'reorder_threshold': 5,
+                    'price': price
+                })
+            except Exception as e:
+                print(f"Failed to extract item: {e}")
+
         return items
 
-    def get_all_pages(self):
-        """Iterate through valid pages and stop when no more pages exist."""
-        all_items = []
-        page_number = 1  
-
-        while True:
-            url = f"{self.base_url}page-{page_number}.html" if page_number > 1 else self.base_url
-            print(f"Scraping page {page_number}...")
-
-            html = self.fetch_data(url)
-            if not html:  
-                break  
-
-            parsed_items = self.parse_data(html)
-            if not parsed_items:  
-                print(f"No more products found on page {page_number}. Stopping...")
-                break  
-
-            all_items.extend(parsed_items)
-
-            # Check if "next" button exists
-            soup = BeautifulSoup(html, 'html.parser')
-            next_button = soup.find('li', class_='next')
-            if not next_button:  
-                print("No more pages. Stopping...")
-                break  
-
-            page_number += 1  
-
-        return all_items
-
     def update_database(self):
-        """Update the database with scraped inventory data."""
-        with app.app_context():
-            items = self.get_all_pages()
-            if not items:
-                print("No data scraped, skipping update.")
-                return 0
+        if not self.fetch_data():
+            print("Failed to fetch data")
+            return 0
 
-            existing_items = {item.name: item for item in StockItem.query.all()}  
-            new_entries = []
+        items = self.parse_data()
+        if not items:
+            print("No items parsed")
+            return 0
 
-            for item_data in items:
-                if item_data['name'] in existing_items:
-                    existing_items[item_data['name']].current_stock = item_data['current_stock']
-                else:
-                    new_entries.append(StockItem(**item_data))
+        count = 0
+        for item_data in items:
+            existing_item = StockItem.query.filter_by(name=item_data['name']).first()
 
-            if new_entries:
-                db.session.bulk_save_objects(new_entries)
+            if existing_item:
+                print(f"Updating {item_data['name']}")
+                existing_item.current_stock = item_data['current_stock']
+                existing_item.price = item_data['price']
+            else:
+                print(f"Adding {item_data['name']}")
+                new_item = StockItem(**item_data)
+                db.session.add(new_item)
 
+            count += 1
+
+        try:
             db.session.commit()
-            print(f"Updated database with {len(items)} records.")
-            return len(items)
+            print("Database updated successfully")
+        except Exception as e:
+            db.session.rollback()
+            print(f"Failed to commit updates: {e}")
 
-# Usage
-if __name__ == "__main__":
-    scraper = WebScraper()
-    scraper.update_database()
+        return count

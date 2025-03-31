@@ -2,23 +2,29 @@
 
 {% block content %}
     <h1>Demand Forecasts</h1>
-    <div class="chart">
-        {{ chart|safe }}
-    </div>
+    <div class="chart">{{ chart | safe }}</div>
     
-    <h2>Recent Forecasts</h2>
-    <table>
-        <tr>
-            <th>Item</th>
-            <th>Predicted Demand</th>
-            <th>Forecast Date</th>
-        </tr>
-        {% for forecast in forecasts %}
-        <tr>
-            <td>{{ forecast.stock_item.name }}</td>
-            <td>{{ forecast.predicted_demand }}</td>
-            <td>{{ forecast.forecast_date.strftime('%Y-%m-%d') }}</td>
-        </tr>
-        {% endfor %}
-    </table>
+    <h2>Forecast Details</h2>
+    {% if forecasts %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Predicted Demand</th>
+                    <th>Forecast Date</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for forecast in forecasts %}
+                <tr>
+                    <td>{{ forecast.stock_item.name }}</td>
+                    <td>{{ forecast.predicted_demand }}</td>
+                    <td>{{ forecast.forecast_date }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No forecasts available. Generate forecasts from the dashboard.</p>
+    {% endif %}
 {% endblock %}

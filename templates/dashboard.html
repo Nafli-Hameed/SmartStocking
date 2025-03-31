@@ -2,28 +2,34 @@
 
 {% block content %}
     <h1>Inventory Dashboard</h1>
-    <form action="{{ url_for('update_stock') }}" method="post">
+    <form method="post" action="{{ url_for('update_stock') }}">
         <button type="submit">Update Stock Data</button>
     </form>
     
     <table>
-        <tr>
-            <th>Item</th>
-            <th>Category</th>
-            <th>Current Stock</th>
-            <th>Threshold</th>
-            <th>Action</th>
-        </tr>
-        {% for item in items %}
-        <tr class="{{ 'alert' if item.needs_reorder() }}">
-            <td>{{ item.name }}</td>
-            <td>{{ item.category }}</td>
-            <td>{{ item.current_stock }}</td>
-            <td>{{ item.reorder_threshold }}</td>
-            <td>
-                <a href="{{ url_for('stock_forecast', stock_id=item.id) }}">Forecast</a>
-            </td>
-        </tr>
-        {% endfor %}
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th>Category</th>
+                <th>Price</th>
+                <th>Current Stock</th>
+                <th>Threshold</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr {% if item.needs_reorder() %}class="reorder"{% endif %}>
+                <td>{{ item.name }}</td>
+                <td>{{ item.category }}</td>
+                <td>£{{ item.price }}</td>
+                <td>{{ item.current_stock }}</td>
+                <td>{{ item.reorder_threshold }}</td>
+                <td>
+                    <a href="{{ url_for('stock_forecast', stock_id=item.id) }}">Forecast</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
     </table>
 {% endblock %}
