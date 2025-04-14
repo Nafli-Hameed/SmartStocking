@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -8,21 +9,13 @@
 <body>
     <nav>
         <a href="{{ url_for('dashboard') }}">Dashboard</a>
+        <a href="{{ url_for('manage_inventory') }}">Manage Current Inventory</a>
         <a href="{{ url_for('forecast_view') }}">Forecasts</a>
         <a href="{{ url_for('reorder_list') }}">Reorder List</a>
     </nav>
     
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            <ul>
-            {% for category, message in messages %}
-                <li>{{ message }}</li>
-            {% endfor %}
-            </ul>
-        {% endif %}
-    {% endwith %}
-
-    <div>
+    
+    <div class="content">
         {% block content %}{% endblock %}
     </div>
 </body>

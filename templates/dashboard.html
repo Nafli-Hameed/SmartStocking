@@ -2,23 +2,45 @@
 
 {% block content %}
     <h1>Inventory Dashboard</h1>
+    
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <ul class="flashes">
+            {% for message in messages %}
+                <li>{{ message }}</li>
+            {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
 
-    <button onclick="openModal()">Update Stock Data</button>
 
-    <form action="{{ url_for('clear_stock') }}" method="post">
-        <button type="submit">Clear Existing Stock</button>
-    </form>
-
-    <!-- The Modal -->
-    <div id="urlModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal()">&times;</span>
-            <h2>Enter URL to Scrape</h2>
-            <input type="text" id="scrapeUrl" placeholder="https://example.com">
-            <button onclick="updateStock()">Submit</button>
-        </div>
+    <!-- Data Source Selection -->
+    <div class="data-source-controls">
+        <form method="post" action="{{ url_for('update_stock') }}">
+            <input type="text" name="url" placeholder="Custom URL">
+            <button type="submit">Scrape Custom URL</button>
+        </form>
+        
+        <form method="post" action="{{ url_for('upload_data') }}" enctype="multipart/form-data">
+            <input type="file" name="file" accept=".csv">
+            <button type="submit">Upload CSV</button>
+        </form>
+        
+        <!-- Clear Dashboard Button -->
+        <form method="post" action="{{ url_for('clear_dashboard') }}" style="margin-top: 10px;">
+            <button type="submit" style="background-color: #f44336; color: white;">Clear Dashboard</button>
+        </form>
     </div>
 
+    <!-- Threshold Controls -->
+    <div class="threshold-controls">
+        <form method="post" action="{{ url_for('set_threshold') }}">
+            <input type="number" name="threshold" placeholder="Global Threshold %" min="0" max="100">
+            <button type="submit">Set Threshold</button>
+        </form>
+    </div>
+
+    <!-- Inventory Table -->
     <table>
         <thead>
             <tr>
@@ -27,17 +49,19 @@
                 <th>Price</th>
                 <th>Current Stock</th>
                 <th>Threshold</th>
+                <th>Market Available</th>
                 <th>Actions</th>
             </tr>
         </thead>
         <tbody>
             {% for item in items %}
-            <tr {% if item.needs_reorder() %}class="reorder"{% endif %}>
+            <tr class="{% if item.needs_reorder() %}reorder-alert{% endif %}">
                 <td>{{ item.name }}</td>
                 <td>{{ item.category }}</td>
                 <td>£{{ item.price }}</td>
                 <td>{{ item.current_stock }}</td>
                 <td>{{ item.reorder_threshold }}</td>
+                <td>{{ item.market_availability }}</td>
                 <td>
                     <a href="{{ url_for('stock_forecast', stock_id=item.id) }}">Forecast</a>
                 </td>
@@ -46,45 +70,4 @@
         </tbody>
     </table>
 
-    <script>
-        // Get the modal
-        var modal = document.getElementById("urlModal");
-
-        // Function to open the modal
-        function openModal() {
-            modal.style.display = "block";
-        }
-
-        // Function to close the modal
-        function closeModal() {
-            modal.style.display = "none";
-        }
-
-        // Function to update stock data with the URL
-        function updateStock() {
-            var url = document.getElementById("scrapeUrl").value;
-            // Send the URL to the server using a POST request
-            fetch("{{ url_for('update_stock') }}", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ "url": url })
-            }).then(response => {
-                if (response.ok) {
-                    window.location.reload(); // Reload the page after successful update
-                } else {
-                    alert("Failed to update stock data.");
-                }
-            });
-            closeModal();
-        }
-
-        // Close the modal if the user clicks outside of it
-        window.onclick = function(event) {
-            if (event.target == modal) {
-                closeModal();
-            }
-        }
-    </script>
 {% endblock %}
