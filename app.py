@@ -10,12 +10,11 @@ from datetime import datetime
 from werkzeug.utils import secure_filename
 import os
 from db import db
+from utils import match_items, forecast_reorder
 
 
 app = Flask(__name__)
 app.config.from_object(Config)
-
-
 
 with app.app_context():
     db.init_app(app)
@@ -112,7 +111,7 @@ def stock_forecast(stock_id):
         db.session.add(new_forecast)
         db.session.commit()
         
-    return redirect(url_for('forecast_view'))
+    return redirect(url_for('forecast'))
 
 @app.route('/clear-dashboard', methods=['POST'])
 def clear_dashboard():
@@ -126,25 +125,32 @@ def clear_dashboard():
         
     return redirect(url_for('dashboard'))
 
-@app.route('/forecasts')
-def forecast_view():
-    forecasts = Forecast.query.all()
-    
-    df = pd.DataFrame([(f.stock_item.name, f.predicted_demand, f.forecast_date) for f in forecasts],
-                      columns=['Stock Name', 'Predicted Demand', 'Forecast Date'])
-    
-    fig = px.line(df, x='Forecast Date', y='Predicted Demand', color='Stock Name',
-                  title='Demand Forecast History')
-    
-    chart = fig.to_html(full_html=False)
-    
-    return render_template('forecast.html', forecasts=forecasts, chart=chart)
 
-@app.route('/reorder')
-def reorder_list():
-    items = StockItem.query.all()
-    reorder_items = [item for item in items if item.needs_reorder()]
-    return render_template('reorder.html', items=reorder_items)
+@app.route('/forecast', methods=['GET'])
+def forecast():
+    with app.app_context():
+        inventory_items = InventoryItem.query.all()
+        market_items = StockItem.query.all()
+        
+        matched_items, mismatched_items = match_items(inventory_items, market_items)
+        reorders = forecast_reorder(matched_items)
+        
+        # Check if reorders list is empty
+        if not reorders:
+            flash('No items need reordering at this time.')
+        
+        return render_template('forecast.html', reorders=reorders, mismatched_items=mismatched_items)
+
+
+@app.route('/reorder', methods=['GET'])
+def reorder():
+    inventory_items = InventoryItem.query.all()
+    market_items = StockItem.query.all()
+    
+    matched_items, mismatched_items = match_items(inventory_items, market_items)
+    reorders = forecast_reorder(matched_items)
+    
+    return render_template('reorder.html', reorders=reorders)
 
 @app.route('/set_threshold', methods=['POST'])
 def set_threshold():
