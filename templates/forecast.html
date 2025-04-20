@@ -2,9 +2,22 @@
 
 {% block content %}
     <h1>Demand Forecasts</h1>
-    <div>{{ chart | safe }}</div>
-    
-    <h2>Forecast Details</h2>
+
+       <!-- Button to clear forecasts -->
+    <form method="POST" action="{{ url_for('clear_forecasts') }}">
+        <button type="submit" class="btn btn-danger">Clear All Forecasts</button>
+    </form>
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <ul class="flashes">
+            {% for message in messages %}
+                <li>{{ message }}</li>
+            {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+
     {% if forecasts %}
         <table>
             <thead>
@@ -19,7 +32,7 @@
                 <tr>
                     <td>{{ forecast.stock_item.name }}</td>
                     <td>{{ forecast.predicted_demand }}</td>
-                    <td>{{ forecast.forecast_date }}</td>
+                    <td>{{ forecast.forecast_date.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                 </tr>
             {% endfor %}
             </tbody>

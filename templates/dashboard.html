@@ -1,8 +1,9 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h1>Inventory Dashboard</h1>
-    
+    <h1>Market Dashboard</h1>
+
+    <!-- Display Flash Messages -->
     {% with messages = get_flashed_messages() %}
         {% if messages %}
             <ul class="flashes">
@@ -13,61 +14,50 @@
         {% endif %}
     {% endwith %}
 
-
-    <!-- Data Source Selection -->
+    <!-- Data Source Selection Section -->
     <div class="data-source-controls">
         <form method="post" action="{{ url_for('update_stock') }}">
-            <input type="text" name="url" placeholder="Custom URL">
+            <input type="text" name="url" placeholder="Custom URL" required>
             <button type="submit">Scrape Custom URL</button>
         </form>
         
         <form method="post" action="{{ url_for('upload_data') }}" enctype="multipart/form-data">
-            <input type="file" name="file" accept=".csv">
+            <input type="file" name="file" accept=".csv" required>
             <button type="submit">Upload CSV</button>
         </form>
         
-        <!-- Clear Dashboard Button -->
         <form method="post" action="{{ url_for('clear_dashboard') }}" style="margin-top: 10px;">
             <button type="submit" style="background-color: #f44336; color: white;">Clear Dashboard</button>
         </form>
     </div>
 
-    <!-- Threshold Controls -->
-    <div class="threshold-controls">
-        <form method="post" action="{{ url_for('set_threshold') }}">
-            <input type="number" name="threshold" placeholder="Global Threshold %" min="0" max="100">
-            <button type="submit">Set Threshold</button>
-        </form>
-    </div>
-
-    <!-- Inventory Table -->
-    <table>
-        <thead>
-            <tr>
-                <th>Item</th>
-                <th>Category</th>
-                <th>Price</th>
-                <th>Current Stock</th>
-                <th>Threshold</th>
-                <th>Market Available</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in items %}
-            <tr class="{% if item.needs_reorder() %}reorder-alert{% endif %}">
-                <td>{{ item.name }}</td>
-                <td>{{ item.category }}</td>
-                <td>£{{ item.price }}</td>
-                <td>{{ item.current_stock }}</td>
-                <td>{{ item.reorder_threshold }}</td>
-                <td>{{ item.market_availability }}</td>
-                <td>
-                    <a href="{{ url_for('stock_forecast', stock_id=item.id) }}">Forecast</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
+    <!-- Display Data in the Dashboard -->
+    {% if grouped_items %}
+        <h3>Current Stock Data</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <!-- Loop over all_dates to create columns for each date -->
+                    {% for date in all_dates %}
+                        <th>Stock on {{ date }}</th>  <!-- Display 'Stock on [Date]' as header -->
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for name, stock_data in grouped_items.items() %}
+                    <tr>
+                        <td>{{ name }}</td>
+                        {% for date in all_dates %}
+                            {# Display the stock for the current date, default to 0 if not found #}
+                            {% set stock = stock_data.get(date, 0) %}
+                            <td>{{ stock }}</td>  <!-- Display stock for the current date -->
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No data available. Please upload stock data or scrape a URL.</p>
+    {% endif %}
 {% endblock %}
