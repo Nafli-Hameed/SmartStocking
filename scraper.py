@@ -48,7 +48,7 @@ class WebScraper:
                     'name': name,
                     'category': "Books",  # All items are books
                     'current_stock': current_stock,
-                    'reorder_threshold': 5,
+                     #'reorder_threshold': 5,
                     'price': price
                 })
             except Exception as e:

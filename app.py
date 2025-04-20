@@ -169,7 +169,7 @@ def clear_dashboard():
     return redirect(url_for('dashboard'))
 
 
-@app.route('/forecast', methods=['GET'])
+'''@app.route('/forecast', methods=['GET'])
 def forecast():
     with app.app_context():
         # Fetch items from both inventory and market stock (StockItem and InventoryItem)
@@ -197,9 +197,9 @@ def forecast():
             flash('No items need reordering at this time.')
 
         # Render forecast page with reorder information
-        return render_template('forecast.html', reorders=reorders, mismatched_items=mismatched_items)
+        return render_template('forecast.html', reorders=reorders, mismatched_items=mismatched_items)'''
 
-@app.route('/clear-forecasts', methods=['POST'])
+'''@app.route('/clear-forecasts', methods=['POST'])
 def clear_forecasts():
     try:
         Forecast.query.delete()  # Deletes all records in the Forecast table
@@ -208,7 +208,7 @@ def clear_forecasts():
     except Exception as e:
         flash(f'Error clearing forecasts: {str(e)}')
 
-    return redirect(url_for('forecast'))
+    return redirect(url_for('forecast'))'''
 
 
 @app.route('/reorder', methods=['GET', 'POST'])
@@ -328,7 +328,7 @@ def clear_warehouse_inventory():
     return redirect(url_for('manage_inventory'))
 
 
-@app.route('/set_threshold', methods=['POST'])
+'''@app.route('/set_threshold', methods=['POST'])
 def set_threshold():
     try:
         threshold = int(request.form['threshold'])
@@ -339,7 +339,7 @@ def set_threshold():
         flash('Global threshold updated successfully')
     except ValueError:
         flash('Invalid threshold value')
-    return redirect(url_for('dashboard'))
+    return redirect(url_for('dashboard'))'''
 
 @app.route('/manage-inventory', methods=['GET', 'POST'])
 def manage_inventory():
@@ -421,7 +421,7 @@ def add_stock():
             name=request.form['name'],
             category=request.form['category'],
             current_stock=int(request.form['current_stock']),
-            reorder_threshold=int(request.form['reorder_threshold']),
+            #reorder_threshold=int(request.form['reorder_threshold']),
             price=float(request.form['price'])
         )
         db.session.add(item)
@@ -432,7 +432,7 @@ def add_stock():
     return render_template('add_stock.html')
 
 
-@app.route('/update_threshold/<int:item_id>', methods=['POST'])
+'''@app.route('/update_threshold/<int:item_id>', methods=['POST'])
 def update_threshold(item_id):
     item = StockItem.query.get_or_404(item_id)
     try:
@@ -441,7 +441,7 @@ def update_threshold(item_id):
         flash(f'Threshold updated for {item.name}')
     except ValueError:
         flash('Invalid threshold value')
-    return redirect(url_for('dashboard'))
+    return redirect(url_for('dashboard'))'''
 
 if __name__ == '__main__':
     with app.app_context():
