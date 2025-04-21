@@ -252,9 +252,12 @@ def reorder():
                 else:
                     # If no inventory item is found for the market item, skip it
                     continue
-
+            matched_items, mismatched_items = match_items(inventory_items, market_items)
+            reorders = forecast_reorder(matched_items)    
+            graph_data = [{'Item': r['name'], 'Amount': r['amount_to_reorder']} for r in reorders]
+           
             # Display results on the reorder page
-            return render_template('reorder.html', reorder_results=reorder_results)
+            return render_template('reorder.html', reorder_results=reorder_results, mismatched_items=mismatched_items, graph_data=graph_data)
 
         except Exception as e:
             flash(f'An error occurred while processing the reorder request: {str(e)}')
