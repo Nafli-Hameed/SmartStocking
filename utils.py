@@ -1,9 +1,7 @@
-# utils.py
 from models import InventoryItem, StockItem
 from db import db
 from flask import current_app
 
-# utils.py
 def match_items(inventory_items, market_items):
     matched_items = []
     mismatched_items = []
@@ -48,7 +46,7 @@ def forecast_reorder(matched_items):
 def calculate_forecasted_demand(market_item):
     if market_item.market_availability:
         # Simple logic for forecasting demand, adjust as needed
-        return market_item.current_stock  # You can improve this with more complex logic
+        return market_item.current_stock  
     else:
         return 0  # If not available in the market, no forecasted demand
 

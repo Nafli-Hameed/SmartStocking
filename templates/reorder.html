@@ -3,7 +3,7 @@
 {% block content %}
 <h1>Reorder Forecast and List</h1>
 
-<!-- Display Flash Messages -->
+<!-- Flash Messages -->
 {% with messages = get_flashed_messages() %}
   {% if messages %}
     <ul class="flashes">
@@ -14,21 +14,18 @@
   {% endif %}
 {% endwith %}
 
-<!-- Button to Compare Market and Inventory -->
+<!-- Actions -->
 <form method="POST" action="{{ url_for('reorder') }}">
   <button type="submit">Compare Market Availability & Inventory</button>
 </form>
 
-<!-- Button to clear all forecasts -->
 <form method="POST" action="{{ url_for('clear_reorder_forecasts') }}">
   <button type="submit" class="btn btn-danger">Clear All Reorder Forecasts</button>
 </form>
 
-<!-- Reorder Recommendations Table -->
+<!-- Reorder Results -->
 {% if reorder_results %}
   <h3>Reorder Recommendations</h3>
-  
-  <!-- Button to open chart modal -->
   <button id="show-graph-btn">Show Forecast Chart</button>
 
   <table>
@@ -67,7 +64,7 @@
   </div>
 </div>
 
-<!-- Styles for Modal -->
+<!-- Modal Styles -->
 <style>
 .modal {
   display: none; position: fixed; z-index: 999; left: 0; top: 0;
@@ -82,39 +79,38 @@
 }
 </style>
 
-<!-- Include Plotly -->
+<!-- Plotly Library -->
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 
-<!-- Chart Logic -->
+<!-- Chart Script -->
 <script>
 document.getElementById("show-graph-btn").onclick = function () {
   const modal = document.getElementById("graph-modal");
   modal.style.display = "block";
 
-    const reorderData = {{ reorder_results | tojson | safe }};
-    const items = reorderData.map(r => r.item_name);
-    const restocks = reorderData.map(r => r.restock_amount);
-    const demands = reorderData.map(r => r.predicted_demand);
+  const reorderData = {{ reorder_results | tojson | safe }};
+  const items = reorderData.map(r => r.item_name);
+  const restocks = reorderData.map(r => r.restock_amount);
+  const demands = reorderData.map(r => r.predicted_demand);
 
-    const data = [{
+  const data = [{
     x: items,
     y: restocks,
     type: 'bar',
     marker: { color: 'teal' },
     text: demands.map(d => `Predicted Demand: ${d}`),
-    hovertemplate: 
-        '<b>%{x}</b><br>' +
-        'Restock Amount: %{y}<br>' +
-        '%{text}<extra></extra>'
-    }];
+    hovertemplate: '<b>%{x}</b><br>' +
+                   'Restock Amount: %{y}<br>' +
+                   '%{text}<extra></extra>'
+  }];
 
-    const layout = {
+  const layout = {
     title: 'Restock Forecast Chart',
     xaxis: { title: 'Item' },
     yaxis: { title: 'Restock Amount' }
-    };
+  };
 
-    Plotly.newPlot('forecast-chart', data, layout);
+  Plotly.newPlot('forecast-chart', data, layout);
 };
 
 document.querySelector(".close").onclick = function () {
