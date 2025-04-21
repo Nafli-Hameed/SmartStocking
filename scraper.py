@@ -25,36 +25,41 @@ class WebScraper:
 
         soup = BeautifulSoup(self.raw_data, 'html.parser')
         items = []
-        
+
         for article in soup.find_all('article', class_='product_pod'):
             try:
                 # Extract the book name
                 name = article.h3.a['title']
 
-                # Extract the price, removing the £ sign and any encoding issues
+                # Extract the price
                 price_text = article.find('p', class_='price_color').text.strip()
-                # Remove any non-numeric characters except for the decimal point
-                price_text = price_text.replace('£', '').replace('Â', '').replace(',', '')  # Remove comma if present
+                price_text = price_text.replace('£', '').replace('Â', '').replace(',', '')
                 price = float(price_text)
 
-                # Extract the availability. If it's in stock, assign a random stock level
-                availability = article.find('p', class_='instock availability').text.strip()
-                if "In stock" in availability:
-                    current_stock = 20  # Fixed quantity of books
-                else:
-                    current_stock = 0
+                # Extract relative URL to product detail page
+                detail_href = article.h3.a['href']
+                detail_url = self.base_url.rsplit('/', 1)[0] + '/' + detail_href
+
+                # Fetch product detail page
+                detail_response = requests.get(detail_url)
+                detail_soup = BeautifulSoup(detail_response.text, 'html.parser')
+
+                # Extract availability from product table
+                availability_text = detail_soup.find('table', class_='table table-striped').find(string=re.compile("In stock"))
+                stock_match = re.search(r'\((\d+)\s+available\)', availability_text)
+                current_stock = int(stock_match.group(1)) if stock_match else 0
 
                 items.append({
                     'name': name,
-                    'category': "Books",  # All items are books
+                    'category': "Books",
                     'current_stock': current_stock,
-                     #'reorder_threshold': 5,
                     'price': price
                 })
             except Exception as e:
                 print(f"Failed to extract item: {e}")
 
         return items
+
 
     def update_database(self, url):
         if not self.fetch_data(url):

@@ -138,3 +138,9 @@ th {
     cursor: pointer;
   }
   
+
+  .chart-container {
+    width: 100%;
+    overflow-x: auto;
+    margin-bottom: 30px;
+}
