@@ -26,6 +26,9 @@ scraper = WebScraper()
 forecaster = ForecastModel()
 
 # -------------------- ROUTES --------------------
+@app.route('/')
+def home():
+    return redirect(url_for('dashboard'))
 
 @app.route('/dashboard', methods=['GET', 'POST'])
 def dashboard():
